@@ -65,12 +65,14 @@ class _MyAppState extends State<MyApp> {
   double btc = 0;
   double varBtc = 0;
 
-  late Future<Dado> dadoFuturo;
+  bool _conversorCotacoes = true;
+
+  late Future<Dado> _dadoFuturo;
 
   @override
   void initState() {
     super.initState();
-    dadoFuturo = fetchDado();
+    _dadoFuturo = fetchDado();
   }
 
   @override
@@ -94,7 +96,7 @@ class _MyAppState extends State<MyApp> {
             title: const Text('Conversor de Moedas'),
           ),
           body: FutureBuilder<Dado>(
-            future: dadoFuturo,
+            future: _dadoFuturo,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 dolar = double.parse(snapshot.data!.usdbrl);
@@ -108,49 +110,34 @@ class _MyAppState extends State<MyApp> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        const Icon(Icons.monetization_on, size: 120),
-                        currencyTextField(
-                            'Real', 'R\$ ', realControlTextEd, _convertReal),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _conversorCotacoes = true;
+                                      _dadoFuturo = fetchDado();
+                                    });
+                                  },
+                                  icon: const Icon(Icons.monetization_on,
+                                      size: 100),
+                                  label: const Text("Conversor")),
+                              TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _conversorCotacoes = false;
+                                      _clearFields();
+                                      _dadoFuturo = fetchDado();
+                                    });
+                                  },
+                                  icon: const Icon(
+                                      Icons.stacked_line_chart_rounded,
+                                      size: 100),
+                                  label: const Text("Cotações")),
+                            ]),
                         const SizedBox(height: 20),
-                        currencyTextField('Dólar', 'US\$ ', dolarControlTextEd,
-                            _convertDolar),
-                        const SizedBox(height: 20),
-                        currencyTextField(
-                            'Euro', '€\$ ', euroControlTextEd, _convertEuro),
-                        const SizedBox(height: 20),
-                        currencyTextField(
-                            'Bitcoin', 'BTC ', btcControlTextEd, _convertBtc),
-                        const SizedBox(height: 20),
-                        const Icon(Icons.stacked_line_chart_rounded, size: 120),
-                        DecoratedText(
-                          text:
-                              "Dólar: $varDolar \n\nEuro: $varEuro \n\nBitcoin: $varBtc",
-                          style: const TextStyle(fontSize: 24),
-                          rules: [
-                            DecoratorRule(
-                              regExp: RegExp(
-                                r'(.-.*)',
-                              ),
-                              style: const TextStyle(
-                                  fontSize: 24, color: Colors.red),
-                              leadingBuilder: (match) => const Icon(
-                                  Icons.arrow_drop_down_sharp,
-                                  size: 24,
-                                  color: Colors.red),
-                            ),
-                            DecoratorRule(
-                              regExp: RegExp(
-                                r'(.[0-9].*)',
-                              ),
-                              style: const TextStyle(
-                                  fontSize: 24, color: Colors.green),
-                              leadingBuilder: (match) => const Icon(
-                                  Icons.arrow_drop_up_sharp,
-                                  size: 24,
-                                  color: Colors.green),
-                            )
-                          ],
-                        ),
+                        getWidget
                       ]),
                 );
               } else if (snapshot.hasError) {
@@ -162,6 +149,55 @@ class _MyAppState extends State<MyApp> {
             },
           )),
     );
+  }
+
+  Column get getWidget {
+    if (_conversorCotacoes) {
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            currencyTextField('Real', 'R\$ ', realControlTextEd, _convertReal),
+            const SizedBox(height: 20),
+            currencyTextField(
+                'Dólar', 'US\$ ', dolarControlTextEd, _convertDolar),
+            const SizedBox(height: 20),
+            currencyTextField('Euro', '€\$ ', euroControlTextEd, _convertEuro),
+            const SizedBox(height: 20),
+            currencyTextField('Bitcoin', 'BTC ', btcControlTextEd, _convertBtc),
+            const SizedBox(height: 20)
+          ]);
+    } else {
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            DecoratedText(
+              text: "Dólar: $varDolar \n\nEuro: $varEuro \n\nBitcoin: $varBtc",
+              style: const TextStyle(fontSize: 24),
+              rules: [
+                DecoratorRule(
+                  regExp: RegExp(
+                    r'(.-.*)',
+                  ),
+                  style: const TextStyle(fontSize: 24, color: Colors.red),
+                  leadingBuilder: (match) => const Icon(
+                      Icons.arrow_drop_down_sharp,
+                      size: 24,
+                      color: Colors.red),
+                ),
+                DecoratorRule(
+                  regExp: RegExp(
+                    r'(.[0-9].*)',
+                  ),
+                  style: const TextStyle(fontSize: 24, color: Colors.green),
+                  leadingBuilder: (match) => const Icon(
+                      Icons.arrow_drop_up_sharp,
+                      size: 24,
+                      color: Colors.green),
+                )
+              ],
+            ),
+          ]);
+    }
   }
 
   void _clearFields() {
